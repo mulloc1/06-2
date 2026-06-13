@@ -5,6 +5,8 @@ from __future__ import annotations
 import argparse
 import sys
 
+from ai_gitgen import git_io, render
+
 DEFAULT_MODEL = "gpt-4o-mini"
 DEFAULT_TEMPERATURE = 0.2
 DEFAULT_MAX_TOKENS_COMMIT = 400
@@ -44,14 +46,25 @@ def _add_shared_options(
     )
 
 
-def _handle_commit(args: argparse.Namespace) -> int:
-    print("not implemented yet", file=sys.stderr)
+def _handle_collect_flow(args: argparse.Namespace) -> int:
+    try:
+        snapshot = git_io.collect()
+    except git_io.GitError as exc:
+        render.error(str(exc))
+        return EXIT_GIT
+    if snapshot.empty:
+        render.no_changes()
+        return EXIT_OK
+    print("not implemented yet (post-collect)", file=sys.stderr)
     return EXIT_USAGE
+
+
+def _handle_commit(args: argparse.Namespace) -> int:
+    return _handle_collect_flow(args)
 
 
 def _handle_pr(args: argparse.Namespace) -> int:
-    print("not implemented yet", file=sys.stderr)
-    return EXIT_USAGE
+    return _handle_collect_flow(args)
 
 
 def main(argv: list[str] | None = None) -> int:
