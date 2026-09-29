@@ -8,9 +8,7 @@ Use only the supplied status and diff. Never invent tests, files, or behavior.
 Follow the requested format exactly and write the draft in Korean."""
 
 
-def build_messages(
-    command: str, snapshot: GitSnapshot, *, truncated: bool
-) -> list[dict[str, str]]:
+def build_messages(command: str, snapshot: GitSnapshot) -> list[dict[str, str]]:
     """Build API messages for a commit or PR draft."""
 
     if command == "commit":
@@ -38,11 +36,6 @@ TITLE: <제목>
 - <검증 방법>"""
 
     files = "\n".join(f"- {path}" for path in snapshot.files)
-    truncation = (
-        "\n주의: diff가 잘렸으므로 보이지 않는 변경을 추측하지 마세요."
-        if truncated
-        else ""
-    )
     user_prompt = f"""{rules}
 
 변경 파일:
@@ -52,7 +45,7 @@ git status:
 {snapshot.status}
 
 git diff:
-{snapshot.diff or "(diff 없음: status와 파일 목록만 사용)"}{truncation}"""
+{snapshot.diff or "(diff 없음: status와 파일 목록만 사용)"}"""
     return [
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": user_prompt},

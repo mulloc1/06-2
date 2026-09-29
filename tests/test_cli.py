@@ -58,6 +58,18 @@ class TestCLI(unittest.TestCase):
         for heading in ("## Why", "## What", "## How to Test"):
             self.assertIn(heading, output.getvalue())
 
+    def test_sends_complete_diff(self) -> None:
+        marker = "end-of-large-diff"
+        changes = git_changes.GitSnapshot(
+            " M app.py", ("app.py",), "+" + "x" * 12_000 + marker
+        )
+        generated = "SUBJECT: 변경 반영\nBODY:\n- app.py 수정"
+        with mock.patch.object(cli, "collect", return_value=changes):
+            with mock.patch.object(ai_client, "complete", return_value=generated) as complete:
+                with contextlib.redirect_stdout(io.StringIO()):
+                    self.assertEqual(cli.main(["commit"]), 0)
+        self.assertIn(marker, complete.call_args.args[0][1]["content"])
+
     def test_retries_once_with_lower_temperature(self) -> None:
         valid = "SUBJECT: 제목\nBODY:\n- 변경"
         with mock.patch.object(cli, "collect", return_value=CHANGES):

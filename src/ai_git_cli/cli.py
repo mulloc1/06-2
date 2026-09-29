@@ -5,10 +5,7 @@ from collections.abc import Sequence
 import sys
 
 from . import ai_client, prompts, validators
-from .git_changes import GitError, GitSnapshot, collect
-
-
-DIFF_LIMIT = 12_000
+from .git_changes import GitError, collect
 
 
 def _temperature(value: str) -> float:
@@ -64,10 +61,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         print("변경사항이 없습니다.")
         return 0
 
-    truncated = len(snapshot.diff) > DIFF_LIMIT
-    diff = snapshot.diff[:DIFF_LIMIT]
-    prompt_snapshot = GitSnapshot(snapshot.status, snapshot.files, diff)
-    messages = prompts.build_messages(args.command, prompt_snapshot, truncated=truncated)
+    messages = prompts.build_messages(args.command, snapshot)
     temperature = args.temperature
 
     try:
@@ -106,9 +100,6 @@ def main(argv: Sequence[str] | None = None) -> int:
     print(f"변경 파일 {len(snapshot.files)}개")
     for path in snapshot.files:
         print(f"- {path}")
-    if truncated:
-        print(f"- 참고: diff는 {DIFF_LIMIT:,}자까지만 전송했습니다.")
-
     label = "커밋 메시지" if args.command == "commit" else "PR"
     print(f"\n=== AI {label} 초안 ===")
     print(generated.strip())
