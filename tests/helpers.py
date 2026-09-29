@@ -36,3 +36,22 @@ def commit_file(
     path.write_text(content)
     subprocess.run(["git", "add", name], cwd=repo_path, check=True)
     subprocess.run(["git", "commit", "-m", message], cwd=repo_path, check=True)
+
+
+class Chdir:
+    """Temporarily change the process working directory for a test."""
+
+    def __init__(self, path: pathlib.Path | str) -> None:
+        self.path = pathlib.Path(path)
+        self.previous = pathlib.Path.cwd()
+
+    def __enter__(self) -> pathlib.Path:
+        import os
+
+        os.chdir(self.path)
+        return self.path
+
+    def __exit__(self, *_args: object) -> None:
+        import os
+
+        os.chdir(self.previous)
