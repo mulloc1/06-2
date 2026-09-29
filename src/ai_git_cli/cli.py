@@ -33,7 +33,7 @@ def _positive_float(value: str) -> float:
 
 
 def _add_options(parser: argparse.ArgumentParser, max_tokens: int) -> None:
-    parser.add_argument("--model", default="gpt-5-mini")
+    parser.add_argument("--model", default="gpt-5.4-mini")
     parser.add_argument("--temperature", type=_temperature, default=0.2)
     parser.add_argument("--max-tokens", type=_positive_int, default=max_tokens)
     parser.add_argument("--timeout", type=_positive_float, default=30.0)
