@@ -1,11 +1,13 @@
-# 기준 8 · 책임 분리
+# 평가 문항 8 · 책임 분리
+
+## 답변
 
 | 모듈 | 책임 |
 | --- | --- |
-| `git_changes.py` | Git 저장소·status·diff 수집 |
-| `ai_client.py` | 코디세이 HTTP 요청과 오류 분류 |
-| `prompts.py` | 목적별 생성 지시와 변경 맥락 조립 |
-| `validators.py` | 결정론적 형식 검증 |
-| `cli.py` | 옵션, 전체 흐름, 터미널 출력 |
+| `git_changes.py` | 저장소 루트 확인, status, staged/unstaged diff 수집 |
+| `ai_client.py` | API 키 로드, HTTP 요청·응답 파싱, 예외 분류 |
+| `prompts.py` | commit/PR별 지시문과 Git 변경 맥락 조립 |
+| `validators.py` | 제목 길이, 헤더, 불릿 수의 결정적 검증 |
+| `cli.py` | 옵션 파싱, 전체 흐름 조합, 재생성, 터미널 출력 |
 
-따라서 Git 로직은 임시 저장소로, HTTP 로직은 mock 응답으로 독립 테스트할 수 있다. API 제공자 사양이 바뀌어도 Git 수집 코드는 수정하지 않는다.
+이 분리 덕분에 Git 명령이 바뀌면 수집 모듈만, API 사양이 바뀌면 클라이언트만 수정할 수 있다. Git 로직은 임시 저장소로, HTTP 로직은 mock 응답으로, 프롬프트와 검증기는 순수 입출력 테스트로 독립 검증할 수 있어 실패 원인도 쉽게 고립된다.

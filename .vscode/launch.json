@@ -1,0 +1,142 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: 현재 파일",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "justMyCode": true
+        },
+        {
+            "name": "CLI: commit 기본값 (API 호출)",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "ai_git_cli",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "args": ["commit"],
+            "justMyCode": true
+        },
+        {
+            "name": "CLI: pr 기본값 (API 호출)",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "ai_git_cli",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "args": ["pr"],
+            "justMyCode": true
+        },
+        {
+            "name": "CLI: 입력값 선택 (API 호출)",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "ai_git_cli",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "args": [
+                "${input:cliCommand}",
+                "--model", "${input:model}",
+                "--temperature", "${input:temperature}",
+                "--max-tokens", "${input:maxTokens}",
+                "--timeout", "${input:timeout}"
+            ],
+            "justMyCode": true
+        },
+        {
+            "name": "테스트: 전체 unittest",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "unittest",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "args": ["discover", "-s", "tests", "-v"],
+            "justMyCode": true
+        },
+        {
+            "name": "테스트: 현재 테스트 파일",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "justMyCode": true
+        },
+        {
+            "name": "테스트: 이름 패턴 선택",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "unittest",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "args": [
+                "discover", "-s", "tests", "-v",
+                "-k", "${input:testPattern}"
+            ],
+            "justMyCode": true
+        }
+    ],
+    "inputs": [
+        {
+            "id": "cliCommand",
+            "type": "pickString",
+            "description": "실행할 CLI 명령",
+            "options": ["commit", "pr"],
+            "default": "commit"
+        },
+        {
+            "id": "model",
+            "type": "promptString",
+            "description": "모델 ID",
+            "default": "gpt-5.4-mini"
+        },
+        {
+            "id": "temperature",
+            "type": "promptString",
+            "description": "temperature (0.0~2.0)",
+            "default": "0.2"
+        },
+        {
+            "id": "maxTokens",
+            "type": "promptString",
+            "description": "max tokens (양의 정수)",
+            "default": "400"
+        },
+        {
+            "id": "timeout",
+            "type": "promptString",
+            "description": "timeout 초 (양수)",
+            "default": "30"
+        },
+        {
+            "id": "testPattern",
+            "type": "promptString",
+            "description": "테스트 이름 패턴 (-k). 예: invalid_temperature",
+            "default": "invalid_temperature"
+        }
+    ]
+}
