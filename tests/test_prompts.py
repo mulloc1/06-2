@@ -4,7 +4,11 @@ import helpers  # noqa: F401
 from ai_git_cli import git_changes, prompts
 
 
-SNAPSHOT = git_changes.GitSnapshot(" M app.py", ("app.py",), "+change")
+SNAPSHOT = git_changes.GitSnapshot(
+    " M app.py",
+    ("app.py",),
+    {"변경 파일": "- app.py", "git status": " M app.py", "git diff": "+change"},
+)
 
 
 class TestPrompts(unittest.TestCase):
@@ -21,6 +25,15 @@ class TestPrompts(unittest.TestCase):
         for heading in ("## Why", "## What", "## How to Test"):
             self.assertIn(heading, content)
         self.assertIn("80자", content)
+
+    def test_renders_new_context_entry_without_prompt_changes(self) -> None:
+        snapshot = git_changes.GitSnapshot(
+            " M app.py",
+            ("app.py",),
+            {"git status": " M app.py", "현재 브랜치": "feature/context"},
+        )
+        content = prompts.build_messages("commit", snapshot)[1]["content"]
+        self.assertIn("현재 브랜치:\nfeature/context", content)
 
 if __name__ == "__main__":
     unittest.main()

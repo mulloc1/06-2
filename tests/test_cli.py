@@ -7,7 +7,11 @@ import helpers  # noqa: F401
 from ai_git_cli import ai_client, cli, git_changes
 
 
-CHANGES = git_changes.GitSnapshot(" M app.py", ("app.py",), "+change")
+CHANGES = git_changes.GitSnapshot(
+    " M app.py",
+    ("app.py",),
+    {"변경 파일": "- app.py", "git status": " M app.py", "git diff": "+change"},
+)
 
 
 class TestCLI(unittest.TestCase):
@@ -24,7 +28,7 @@ class TestCLI(unittest.TestCase):
         self.assertEqual(caught.exception.code, 2)
 
     def test_no_changes_skips_api(self) -> None:
-        empty = git_changes.GitSnapshot("", (), "")
+        empty = git_changes.GitSnapshot("", (), {})
         with mock.patch.object(cli, "collect", return_value=empty):
             with mock.patch.object(ai_client, "complete") as complete:
                 output = io.StringIO()
@@ -61,7 +65,9 @@ class TestCLI(unittest.TestCase):
     def test_sends_complete_diff(self) -> None:
         marker = "end-of-large-diff"
         changes = git_changes.GitSnapshot(
-            " M app.py", ("app.py",), "+" + "x" * 12_000 + marker
+            " M app.py",
+            ("app.py",),
+            {"git status": " M app.py", "git diff": "+" + "x" * 12_000 + marker},
         )
         generated = "fix: app.py 변경 반영"
         with mock.patch.object(cli, "collect", return_value=changes):

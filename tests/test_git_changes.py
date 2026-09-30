@@ -25,8 +25,8 @@ class TestGitChanges(unittest.TestCase):
             with helpers.Chdir(repo):
                 snapshot = git_changes.collect()
         self.assertEqual(snapshot.files, ("a.txt", "b.txt"))
-        self.assertIn("+staged", snapshot.diff)
-        self.assertIn("+unstaged", snapshot.diff)
+        self.assertIn("+staged", snapshot.prompt_context["staged diff"])
+        self.assertIn("+unstaged", snapshot.prompt_context["unstaged diff"])
 
     def test_untracked_file_name_but_not_content(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -35,7 +35,19 @@ class TestGitChanges(unittest.TestCase):
             with helpers.Chdir(repo):
                 snapshot = git_changes.collect()
         self.assertEqual(snapshot.files, ("new.txt",))
-        self.assertNotIn("secret content", snapshot.diff)
+        self.assertNotIn(
+            "secret content", "\n".join(snapshot.prompt_context.values())
+        )
+        self.assertIn("git diff", snapshot.prompt_context)
+
+    def test_prompt_context_is_copied_and_immutable(self) -> None:
+        context = {"git status": " M app.py"}
+        snapshot = git_changes.GitSnapshot(" M app.py", ("app.py",), context)
+        context["branch"] = "main"
+
+        self.assertNotIn("branch", snapshot.prompt_context)
+        with self.assertRaises(TypeError):
+            snapshot.prompt_context["branch"] = "main"  # type: ignore[index]
 
     def test_requires_repository_root(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

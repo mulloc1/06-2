@@ -4,10 +4,12 @@
 
 | 모듈 | 책임 |
 | --- | --- |
-| `git_changes.py` | 저장소 루트 확인, status, staged/unstaged diff 수집 |
+| `git_changes.py` | 저장소 루트 확인, Git 정보 수집, 불변 `GitSnapshot` 생성 |
 | `ai_client.py` | API 키 로드, HTTP 요청·응답 파싱, 예외 분류 |
-| `prompts.py` | commit/PR별 지시문과 Git 변경 맥락 조립 |
+| `prompts.py` | commit/PR별 지시문과 `prompt_context` 항목의 일반적 렌더링 |
 | `validators.py` | 제목 길이, 헤더, 불릿 수의 결정적 검증 |
 | `cli.py` | 옵션 파싱, 전체 흐름 조합, 재생성, 터미널 출력 |
 
-이 분리 덕분에 Git 명령이 바뀌면 수집 모듈만, API 사양이 바뀌면 클라이언트만 수정할 수 있다. Git 로직은 임시 저장소로, HTTP 로직은 mock 응답으로, 프롬프트와 검증기는 순수 입출력 테스트로 독립 검증할 수 있어 실패 원인도 쉽게 고립된다.
+프로그램 제어에 필요한 `status`와 `files`는 고정 필드로 유지하고, API에 전송할 확장 정보는 `prompt_context` 매핑에 보관한다. 수집 채널이 늘어나면 `git_changes.py`가 매핑에 항목을 추가하고, `prompts.py`는 키를 미리 알지 않은 채 모든 유효한 항목을 동일하게 펼쳐낸다. 따라서 스냅샷 클래스와 프롬프트 코드를 매번 함께 수정할 필요가 없다. `prompt_context`는 생성 시 복사하고 불변 매핑으로 고정해 스냅샷 생성 후 외부 변경도 차단한다.
+
+Git 로직은 임시 저장소로, HTTP 로직은 mock 응답으로, 프롬프트와 검증기는 순수 입출력 테스트로 독립 검증할 수 있어 실패 원인도 쉽게 고립된다.

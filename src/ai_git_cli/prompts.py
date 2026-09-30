@@ -1,11 +1,21 @@
 """Build commit and pull-request prompts."""
 
+from collections.abc import Mapping
+
 from .git_changes import GitSnapshot
 
 
 SYSTEM_PROMPT = """You write factual Git commit messages and pull request drafts.
-Use only the supplied status and diff. Never invent tests, files, or behavior.
+Use only the supplied Git context. Never invent tests, files, or behavior.
 Follow the requested format exactly and write the draft in Korean."""
+
+
+def _render_context(context: Mapping[str, str]) -> str:
+    """Render every non-empty snapshot context entry as a prompt section."""
+
+    return "\n\n".join(
+        f"{name}:\n{value}" for name, value in context.items() if value.strip()
+    )
 
 
 def build_messages(command: str, snapshot: GitSnapshot) -> list[dict[str, str]]:
@@ -31,17 +41,9 @@ TITLE: <제목>
 ## How to Test
 - <검증 방법>"""
 
-    files = "\n".join(f"- {path}" for path in snapshot.files)
-    user_prompt = f"""{rules}
+    context = _render_context(snapshot.prompt_context)
+    user_prompt = f"{rules}\n\n{context}"
 
-변경 파일:
-{files or "- 없음"}
-
-git status:
-{snapshot.status}
-
-git diff:
-{snapshot.diff or "(diff 없음: status와 파일 목록만 사용)"}"""
     return [
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": user_prompt},

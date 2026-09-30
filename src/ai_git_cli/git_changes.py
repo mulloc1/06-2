@@ -1,8 +1,10 @@
 """Collect Git status and diffs from the repository root."""
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 import subprocess
+from types import MappingProxyType
 
 
 class GitError(RuntimeError):
@@ -13,7 +15,14 @@ class GitError(RuntimeError):
 class GitSnapshot:
     status: str
     files: tuple[str, ...]
-    diff: str
+    prompt_context: Mapping[str, str]
+
+    def __post_init__(self) -> None:
+        """Copy and freeze the context exposed to prompt builders."""
+
+        object.__setattr__(
+            self, "prompt_context", MappingProxyType(dict(self.prompt_context))
+        )
 
     @property
     def empty(self) -> bool:
@@ -61,13 +70,19 @@ def collect(cwd: Path | None = None) -> GitSnapshot:
 
     status = _git(["status", "--short", "--untracked-files=all"], root).rstrip()
     if not status:
-        return GitSnapshot("", (), "")
+        return GitSnapshot("", (), {})
 
+    files = _files(status)
     staged = _git(["diff", "--cached", "--no-ext-diff"], root).strip()
     unstaged = _git(["diff", "--no-ext-diff"], root).strip()
-    parts: list[str] = []
+    prompt_context = {
+        "변경 파일": "\n".join(f"- {path}" for path in files),
+        "git status": status,
+    }
     if staged:
-        parts.append("===== staged changes =====\n" + staged)
+        prompt_context["staged diff"] = staged
     if unstaged:
-        parts.append("===== unstaged changes =====\n" + unstaged)
-    return GitSnapshot(status, _files(status), "\n\n".join(parts))
+        prompt_context["unstaged diff"] = unstaged
+    if not staged and not unstaged:
+        prompt_context["git diff"] = "(diff 없음: status와 파일 목록만 사용)"
+    return GitSnapshot(status, files, prompt_context)
