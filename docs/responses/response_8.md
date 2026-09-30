@@ -1,15 +1,9 @@
-# 평가 문항 8 · 책임 분리
+# 평가 문항 8 · Git 수집과 AI 호출의 책임 분리
 
 ## 답변
 
-| 모듈 | 책임 |
-| --- | --- |
-| `git_changes.py` | 저장소 루트 확인, Git 정보 수집, 불변 `GitSnapshot` 생성 |
-| `ai_client.py` | API 키 로드, HTTP 요청·응답 파싱, 예외 분류 |
-| `prompts.py` | commit/PR별 지시문과 `prompt_context` 항목의 일반적 렌더링 |
-| `validators.py` | 제목 길이, 헤더, 불릿 수의 결정적 검증 |
-| `cli.py` | 옵션 파싱, 전체 흐름 조합, 재생성, 터미널 출력 |
+Git 수집과 AI 호출은 `GitSnapshot`과 `messages`를 경계로 분리한다. `git_changes.collect()`은 저장소 루트를 확인하고 `git status`와 staged·unstaged diff를 수집해 `GitSnapshot`을 반환한다. 이 모듈은 API 키, 모델, HTTP 요청 형식을 알지 못한다. 반대로 `ai_client.complete()`는 이미 조립된 `messages`와 생성 옵션을 받아 인증, HTTP POST, JSON 응답 파싱, 예외 분류만 담당하며 Git 저장소나 subprocess를 알지 못한다. `cli.py`는 두 기능을 순서대로 호출하는 조합 책임만 가진다.
 
-프로그램 제어에 필요한 `status`와 `files`는 고정 필드로 유지하고, API에 전송할 확장 정보는 `prompt_context` 매핑에 보관한다. 수집 채널이 늘어나면 `git_changes.py`가 매핑에 항목을 추가하고, `prompts.py`는 키를 미리 알지 않은 채 모든 유효한 항목을 동일하게 펼쳐낸다. 따라서 스냅샷 클래스와 프롬프트 코드를 매번 함께 수정할 필요가 없다. `prompt_context`는 생성 시 복사하고 불변 매핑으로 고정해 스냅샷 생성 후 외부 변경도 차단한다.
+이 경계 덕분에 Git 명령, 상태 파싱, 수집 항목이 바뀌면 `git_changes.py`만 중심으로 수정하고, API 주소, 인증 방식, 요청·응답 스키마가 바뀌면 `ai_client.py`만 중심으로 수정할 수 있다. 새 Git 정보는 `GitSnapshot.prompt_context`에 항목을 추가하는 방식으로 확장하며, 프롬프트는 이 매핑을 일반적으로 펼쳐내므로 수집 채널이 늘어나도 프롬프트 코드를 함께 고칠 필요가 없다.
 
-Git 로직은 임시 저장소로, HTTP 로직은 mock 응답으로, 프롬프트와 검증기는 순수 입출력 테스트로 독립 검증할 수 있어 실패 원인도 쉽게 고립된다.
+테스트도 각 경계에 맞춰 분리한다. Git 수집은 임시 Git 저장소에 실제 staged·unstaged·untracked 상태를 만들어 `GitSnapshot`을 검증하며 네트워크를 사용하지 않는다. AI 호출은 `urlopen`과 환경변수를 mock하여 요청 payload, Authorization 헤더, 응답 파싱, HTTP 401·429, 네트워크, 타임아웃 처리를 Git 없이 검증한다. 마지막으로 CLI 테스트에서 `collect()`과 `complete()`를 각각 mock해 변경사항 없음, 옵션 전달, API 오류 전파 같은 두 계층의 조합만 확인한다.
