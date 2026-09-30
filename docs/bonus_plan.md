@@ -40,12 +40,12 @@ extra_sections = ["Risks"]
 
 ## 3. 고급 Safe Mode
 
-diff가 코디세이 API로 전송되기 전에 적용되는 정책 계층을 추가한다.
+필수 구현의 `--safe-mode`는 이메일, 일반 key/token/secret/password 할당값, AWS access key, bearer token 마스킹을 제공한다. 선택 과제에서는 이 정책 계층을 다음과 같이 확장한다.
 
 최소 정책:
 
 - `.env*`, `*.pem`, `*.key`, `*.p12` 내용 제외
-- 이메일, 일반적인 API key/token 할당문, AWS access key, bearer token 마스킹
+- 추가 서비스별 민감정보 패턴
 - 파일별 최대 줄 수 설정
 - 사용자 정규식 추가
 - 적용된 정책과 제외 파일 수를 stderr에 표시

@@ -26,11 +26,12 @@
 5. 형식·길이 검증 및 제한된 재생성
 6. 원인별 오류 처리와 종료 코드
 7. API 파라미터 CLI 옵션
-8. 테스트, README, 실제 실행 검증, GitHub push
+8. `--safe-mode` diff 민감정보 마스킹
+9. 테스트, README, 실제 실행 검증, GitHub push
 
 ### 선택 범위
 
-핵심 완료 후에만 팀 규칙 파일, 사용자 정의 템플릿, 고급 safe mode, 실제 PR 생성 과제를 진행한다. 선택 기능 때문에 필수 기능의 구조나 일정이 복잡해지지 않도록 별도 단계로 격리한다.
+핵심 완료 후에만 팀 규칙 파일, 사용자 정의 템플릿, 파일 제외·줄 수 제한·사용자 정규식을 포함한 고급 safe mode, 실제 PR 생성 과제를 진행한다. 선택 기능 때문에 필수 기능의 구조나 일정이 복잡해지지 않도록 별도 단계로 격리한다.
 
 ## 3. 설계 원칙
 
@@ -40,6 +41,7 @@
 | --- | --- | --- |
 | CLI | 인자 파싱, 실행 흐름, 출력 | 명령 흐름 테스트 |
 | Git 수집 | 저장소 확인, status/diff 실행, 변경 스냅샷 생성 | 임시 Git 저장소 |
+| 보안 | diff 민감정보 마스킹, 원본 스냅샷 보존 | 패턴·CLI 전송 테스트 |
 | AI 클라이언트 | 환경변수, HTTP 요청, 응답 파싱, 오류 분류 | HTTP 계층 mock/fake |
 | 프롬프트 | 변경 파일과 diff를 목적별 형식 지시와 결합 | 순수 문자열 단위 테스트 |
 | 검증 | 길이, 제목, 섹션, 불릿 검사 | 테이블 기반 단위 테스트 |
@@ -87,6 +89,7 @@ src/ai_git_cli/
 ├── __main__.py       # python -m ai_git_cli
 ├── cli.py            # argparse와 실행 흐름
 ├── git_changes.py    # Git 수집
+├── security.py       # safe mode 민감정보 마스킹
 ├── ai_client.py      # REST API 및 오류 분류
 ├── prompts.py        # commit/pr 프롬프트
 └── validators.py     # 출력 형식 검증
@@ -94,6 +97,7 @@ src/ai_git_cli/
 tests/
 ├── test_cli.py
 ├── test_git_changes.py
+├── test_security.py
 ├── test_ai_client.py
 ├── test_prompts.py
 └── test_validators.py
@@ -274,4 +278,4 @@ python -m ai_git_cli pr [공통 옵션]
 - API 비밀정보 미노출 확인
 - GitHub push 완료
 
-그 후 별도 브랜치에서 저장소 규칙 분석과 템플릿 전환, 설정 가능한 safe mode, 실제 PR 생성 및 AI 초안 대비 최종 수정 내역 5~10줄을 추가한다.
+그 후 별도 브랜치에서 저장소 규칙 분석과 템플릿 전환, safe mode의 파일 제외·줄 수 제한·사용자 정규식 확장, 실제 PR 생성 및 AI 초안 대비 최종 수정 내역 5~10줄을 추가한다.

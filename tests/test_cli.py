@@ -16,11 +16,19 @@ CHANGES = git_changes.GitSnapshot(
 
 class TestCLI(unittest.TestCase):
     def test_help_and_options(self) -> None:
-        output = io.StringIO()
-        with contextlib.redirect_stdout(output), self.assertRaises(SystemExit):
-            cli.main(["commit", "--help"])
-        for value in ("--model", "--temperature", "--max-tokens", "--timeout"):
-            self.assertIn(value, output.getvalue())
+        for command in ("commit", "pr"):
+            with self.subTest(command=command):
+                output = io.StringIO()
+                with contextlib.redirect_stdout(output), self.assertRaises(SystemExit):
+                    cli.main([command, "--help"])
+                for value in (
+                    "--model",
+                    "--temperature",
+                    "--max-tokens",
+                    "--timeout",
+                    "--safe-mode",
+                ):
+                    self.assertIn(value, output.getvalue())
 
     def test_invalid_temperature_is_usage_error(self) -> None:
         with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as caught:
@@ -75,6 +83,42 @@ class TestCLI(unittest.TestCase):
                 with contextlib.redirect_stdout(io.StringIO()):
                     self.assertEqual(cli.main(["commit"]), 0)
         self.assertIn(marker, complete.call_args.args[0][1]["content"])
+
+    def test_safe_mode_masks_diff_before_api_call(self) -> None:
+        secret = "owner@example.com"
+        changes = git_changes.GitSnapshot(
+            " M app.py",
+            ("app.py",),
+            {"git status": " M app.py", "unstaged diff": f"+owner={secret}"},
+        )
+        generated = "fix: app.py 변경 반영"
+        with mock.patch.object(cli, "collect", return_value=changes):
+            with mock.patch.object(ai_client, "complete", return_value=generated) as complete:
+                error_output = io.StringIO()
+                with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(
+                    error_output
+                ):
+                    self.assertEqual(cli.main(["commit", "--safe-mode"]), 0)
+
+        prompt = complete.call_args.args[0][1]["content"]
+        self.assertNotIn(secret, prompt)
+        self.assertIn("[MASKED_EMAIL]", prompt)
+        self.assertIn("민감정보 1건", error_output.getvalue())
+
+    def test_without_safe_mode_sends_original_diff(self) -> None:
+        secret = "owner@example.com"
+        changes = git_changes.GitSnapshot(
+            " M app.py",
+            ("app.py",),
+            {"git status": " M app.py", "unstaged diff": f"+owner={secret}"},
+        )
+        generated = "fix: app.py 변경 반영"
+        with mock.patch.object(cli, "collect", return_value=changes):
+            with mock.patch.object(ai_client, "complete", return_value=generated) as complete:
+                with contextlib.redirect_stdout(io.StringIO()):
+                    self.assertEqual(cli.main(["commit"]), 0)
+
+        self.assertIn(secret, complete.call_args.args[0][1]["content"])
 
     def test_retries_once_with_lower_temperature(self) -> None:
         valid = "fix: 변경 반영"

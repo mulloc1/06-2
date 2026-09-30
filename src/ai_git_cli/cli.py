@@ -4,7 +4,7 @@ import argparse
 from collections.abc import Sequence
 import sys
 
-from . import ai_client, prompts, validators
+from . import ai_client, prompts, security, validators
 from .git_changes import GitError, collect
 
 
@@ -34,6 +34,11 @@ def _add_options(parser: argparse.ArgumentParser, max_tokens: int) -> None:
     parser.add_argument("--temperature", type=_temperature, default=0.2)
     parser.add_argument("--max-tokens", type=_positive_int, default=max_tokens)
     parser.add_argument("--timeout", type=_positive_float, default=30.0)
+    parser.add_argument(
+        "--safe-mode",
+        action="store_true",
+        help="diff의 민감정보를 마스킹한 후 API에 전송",
+    )
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -60,6 +65,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     if snapshot.empty:
         print("변경사항이 없습니다.")
         return 0
+
+    if args.safe_mode:
+        snapshot, masked_count = security.mask_snapshot(snapshot)
+        print(
+            f"안전 모드: 민감정보 {masked_count}건을 마스킹했습니다.",
+            file=sys.stderr,
+        )
 
     messages = prompts.build_messages(args.command, snapshot)
     temperature = args.temperature

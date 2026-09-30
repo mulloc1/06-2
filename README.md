@@ -90,12 +90,14 @@ ai-git pr
 | `--temperature` | `0.2` | 샘플링 무작위성, 0.0~2.0 |
 | `--max-tokens` | commit `400`, pr `700` | 생성 응답의 토큰 상한 |
 | `--timeout` | `30` | API 요청 제한 시간(초) |
+| `--safe-mode` | 꺼짐 | diff의 민감정보를 마스킹한 후 전송 |
 
 예시:
 
 ```bash
 python3 -m ai_git_cli commit --temperature 0 --max-tokens 300
 python3 -m ai_git_cli pr --model gpt-5.4-mini --temperature 0.3 --timeout 45
+python3 -m ai_git_cli pr --safe-mode
 ```
 
 ## 출력 예시
@@ -169,6 +171,8 @@ API 오류는 원인을 구분해 표시합니다.
 ## 운영 및 보안 주의사항
 
 - status와 diff는 외부의 코디세이 API로 전송됩니다. 비밀키, 개인정보, 내부 URL이 diff에 없는지 먼저 확인하세요.
+- `--safe-mode`를 사용하면 staged/unstaged diff의 이메일, key/token/secret/password 할당값, Bearer 토큰, AWS access key를 마스킹한 후 전송합니다.
+- 안전 모드는 diff에만 적용되며 패턴 기반 탐지가 모든 민감정보를 보장하지는 않습니다. 파일명·status와 마스킹 결과를 전송 전에 직접 검토하세요.
 - untracked 파일은 이름만 변경 목록에 포함하며 내용은 API로 보내지 않습니다.
 - diff 크기에 따라 입력 토큰 비용과 요청 지연이 늘어날 수 있습니다.
 - 형식 실패 재호출은 최대 한 번으로 제한하지만, 그만큼 추가 토큰이 차감될 수 있습니다.
@@ -191,6 +195,7 @@ python3 -m unittest discover -s tests -v
 src/ai_git_cli/
 ├── cli.py          # 인자와 전체 흐름
 ├── git_changes.py  # Git status/diff 수집
+├── security.py     # safe mode 민감정보 마스킹
 ├── ai_client.py    # 코디세이 REST API 호출과 오류 분류
 ├── prompts.py      # 커밋/PR 프롬프트
 └── validators.py   # 출력 형식 검증
