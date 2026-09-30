@@ -34,7 +34,7 @@ class TestCLI(unittest.TestCase):
         self.assertIn("변경사항이 없습니다", output.getvalue())
 
     def test_commit_options_and_output(self) -> None:
-        generated = "SUBJECT: 변경 반영\nBODY:\n- app.py 수정"
+        generated = "fix: app.py 변경 반영"
         with mock.patch.object(cli, "collect", return_value=CHANGES):
             with mock.patch.object(ai_client, "complete", return_value=generated) as complete:
                 output = io.StringIO()
@@ -63,7 +63,7 @@ class TestCLI(unittest.TestCase):
         changes = git_changes.GitSnapshot(
             " M app.py", ("app.py",), "+" + "x" * 12_000 + marker
         )
-        generated = "SUBJECT: 변경 반영\nBODY:\n- app.py 수정"
+        generated = "fix: app.py 변경 반영"
         with mock.patch.object(cli, "collect", return_value=changes):
             with mock.patch.object(ai_client, "complete", return_value=generated) as complete:
                 with contextlib.redirect_stdout(io.StringIO()):
@@ -71,9 +71,11 @@ class TestCLI(unittest.TestCase):
         self.assertIn(marker, complete.call_args.args[0][1]["content"])
 
     def test_retries_once_with_lower_temperature(self) -> None:
-        valid = "SUBJECT: 제목\nBODY:\n- 변경"
+        valid = "fix: 변경 반영"
         with mock.patch.object(cli, "collect", return_value=CHANGES):
-            with mock.patch.object(ai_client, "complete", side_effect=["wrong", valid]) as complete:
+            with mock.patch.object(
+                ai_client, "complete", side_effect=["SUBJECT: 잘못된 형식", valid]
+            ) as complete:
                 with contextlib.redirect_stdout(io.StringIO()):
                     self.assertEqual(cli.main(["commit", "--temperature", "0.4"]), 0)
         self.assertEqual(complete.call_count, 2)
@@ -82,7 +84,9 @@ class TestCLI(unittest.TestCase):
 
     def test_two_invalid_results_fail(self) -> None:
         with mock.patch.object(cli, "collect", return_value=CHANGES):
-            with mock.patch.object(ai_client, "complete", return_value="wrong") as complete:
+            with mock.patch.object(
+                ai_client, "complete", return_value="SUBJECT: 잘못된 형식"
+            ) as complete:
                 error_output = io.StringIO()
                 with contextlib.redirect_stderr(error_output):
                     self.assertEqual(cli.main(["commit"]), 1)

@@ -12,9 +12,9 @@ class TestPrompts(unittest.TestCase):
         content = prompts.build_messages("commit", SNAPSHOT)[1]["content"]
         self.assertIn("app.py", content)
         self.assertIn("+change", content)
-        self.assertIn("SUBJECT:", content)
+        self.assertIn("한 줄로만", content)
         self.assertIn("72자", content)
-        self.assertIn("1~2개", content)
+        self.assertIn("본문을 붙이지 마세요", content)
 
     def test_pr_sections(self) -> None:
         content = prompts.build_messages("pr", SNAPSHOT)[1]["content"]

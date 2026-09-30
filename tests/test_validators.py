@@ -8,15 +8,16 @@ class TestValidators(unittest.TestCase):
     def test_commit_length_boundaries(self) -> None:
         for length in (50, 51, 72):
             with self.subTest(length=length):
-                text = f"SUBJECT: {'가' * length}\nBODY:\n- 변경"
+                text = "가" * length
                 self.assertEqual(validators.validate("commit", text), [])
-        errors = validators.validate("commit", f"SUBJECT: {'가' * 73}\nBODY:\n- 변경")
-        self.assertIn("SUBJECT가 72자를 초과했습니다", errors)
+        errors = validators.validate("commit", "가" * 73)
+        self.assertIn("커밋 메시지가 72자를 초과했습니다", errors)
 
-    def test_commit_requires_one_or_two_bullets(self) -> None:
-        self.assertTrue(validators.validate("commit", "SUBJECT: 제목\nBODY:"))
-        text = "SUBJECT: 제목\nBODY:\n- 1\n- 2\n- 3"
-        self.assertTrue(validators.validate("commit", text))
+    def test_commit_requires_plain_single_line(self) -> None:
+        self.assertTrue(validators.validate("commit", ""))
+        self.assertTrue(validators.validate("commit", "제목\n본문"))
+        self.assertTrue(validators.validate("commit", "SUBJECT: 제목"))
+        self.assertEqual(validators.validate("commit", "feat: 기능 추가"), [])
 
     def test_valid_pr(self) -> None:
         text = "TITLE: 제목\n## Why\n- 이유\n## What\n- 변경\n## How to Test\n- 테스트"

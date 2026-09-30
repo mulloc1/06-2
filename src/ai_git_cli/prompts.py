@@ -13,13 +13,9 @@ def build_messages(command: str, snapshot: GitSnapshot) -> list[dict[str, str]]:
 
     if command == "commit":
         rules = """커밋 메시지 초안을 작성하세요.
-- SUBJECT는 한 줄이며 권장 50자 이하, 최대 72자입니다.
-- BODY에는 핵심 변경을 1~2개 불릿으로 작성하세요.
-- 다음 형식 외의 내용은 출력하지 마세요.
-
-SUBJECT: <제목>
-BODY:
-- <핵심 변경>"""
+- 한 줄로만 작성하고 권장 50자 이하, 최대 72자를 지키세요.
+- `SUBJECT:` 같은 라벨이나 본문을 붙이지 마세요.
+- 커밋 메시지 외의 내용은 출력하지 마세요."""
     else:
         rules = """Pull Request 초안을 작성하세요.
 - TITLE은 한 줄이며 최대 80자입니다.

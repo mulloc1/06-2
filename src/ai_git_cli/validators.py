@@ -20,20 +20,16 @@ def validate(command: str, text: str) -> list[str]:
 
     errors: list[str] = []
     if command == "commit":
-        subject = re.search(r"(?im)^SUBJECT:\s*(.+)$", text)
-        if not subject:
-            errors.append("SUBJECT 한 줄이 없습니다")
-        elif len(subject.group(1).strip()) > 72:
-            errors.append("SUBJECT가 72자를 초과했습니다")
-
-        body = re.search(r"(?ims)^BODY:\s*(.*)$", text)
-        bullets = [] if not body else [
-            line
-            for line in body.group(1).splitlines()
-            if line.strip().startswith(("- ", "* "))
-        ]
-        if len(bullets) not in (1, 2):
-            errors.append("BODY에는 1~2개의 불릿이 필요합니다")
+        message = text.strip()
+        if not message:
+            errors.append("커밋 메시지가 없습니다")
+            return errors
+        if len(message.splitlines()) != 1:
+            errors.append("커밋 메시지는 한 줄이어야 합니다")
+        if re.match(r"(?i)^SUBJECT\s*:", message):
+            errors.append("SUBJECT 라벨 없이 메시지만 작성해야 합니다")
+        if len(message) > 72:
+            errors.append("커밋 메시지가 72자를 초과했습니다")
         return errors
 
     title = re.search(r"(?im)^TITLE:\s*(.+)$", text)
